@@ -1,0 +1,36 @@
+name: "research"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-test-ubuntu:
+    name: Build And Test Ubuntu
+    runs-on: ubuntu-latest
+    env:
+      CI_BUILD: 1
+      IMAGE: ubuntu
+      IMAGE_TAG: latest
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Install dependencies
+        working-directory: ./core/build
+        run: |
+          python get_dependencies.py -p linux -a x86
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          queries: security-extended,security-and-quality
+
+      - name: Build
+        working-directory: ./core/build
+        run: |
+          python build.py -p linux -a x86 -c release --minimal
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:c-cpp"
